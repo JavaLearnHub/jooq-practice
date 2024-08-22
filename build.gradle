@@ -1,0 +1,199 @@
+import java.nio.file.Files
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.2'
+    id 'io.spring.dependency-management' version '1.1.6'
+
+    id 'org.flywaydb.flyway' version '9.22.3'
+    id 'maven-publish'
+
+    id("nu.studer.jooq") version "8.2.3"
+}
+
+group = 'org.konstde00'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+String jooqVersion = '3.19.5'
+
+dependencies {
+    // provided as transitive dependencies:
+    implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.29'
+    implementation group: "org.flywaydb", name: "flyway-core", version: "10.7.1"
+    implementation group: 'org.jooq', name: 'jooq', version: jooqVersion
+
+    // used only to generate Jooq classes:
+    jooqGenerator 'org.jooq:jooq-meta'
+    jooqGenerator 'org.jooq:jooq-codegen'
+    jooqGenerator 'mysql:mysql-connector-java:8.0.31'
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-jooq'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
+    implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
+
+}
+
+class DbConfig {
+
+    String schema
+    String url
+    String user
+    String password
+    String table
+    String location
+
+    DbConfig(PropertiesHolder props) {
+        user = props.get('database.mysql.user')
+        password = props.get('database.mysql.password')
+        schema = props.get('database.mysql.schema')
+        table = props.get('database.mysql.metadata.table')
+        location = props.get('database.mysql.metadata.location')
+        String host = props.get('database.mysql.host')
+        String port = props.get('database.mysql.port')
+        url = "jdbc:mysql://$host:$port/$schema?useSSL=false&allowPublicKeyRetrieval=true"
+    }
+}
+
+String databasePropertiesFilename = 'db.properties'
+DbConfig dbConfig = new DbConfig(PropertiesHolder.withFallbackFromExample(file(databasePropertiesFilename)))
+
+jooq {
+    version = jooqVersion
+    edition = nu.studer.gradle.jooq.JooqEdition.OSS
+    configurations {
+
+        main {
+
+            generateSchemaSourceOnCompilation = true
+
+            generationTool {
+
+                jdbc {
+                    driver = 'com.mysql.cj.jdbc.Driver'
+                    url = dbConfig.url
+                    schema = dbConfig.schema
+                    user = dbConfig.user
+                    password = dbConfig.password
+                }
+
+                generator {
+                    name = 'org.jooq.codegen.DefaultGenerator'
+                    strategy {
+                        name = 'org.jooq.codegen.DefaultGeneratorStrategy'
+                    }
+                    database {
+                        name = 'org.jooq.meta.mysql.MySQLDatabase'
+                        inputSchema = dbConfig.schema
+                        outputSchemaToDefault = true
+                        includes = '.*'
+                    }
+                    generate {
+                        relations = true
+                        deprecated = false
+                        records = true
+                        immutablePojos = false
+                        pojos = true
+                        fluentSetters = true
+                        daos = true
+                    }
+                    target {
+                        packageName = 'org.konstde00.jooqpractice.sql.schema.jooq'
+                    }
+                }
+            }
+        }
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+class PropertiesHolder {
+
+    def file
+    String filename
+    Properties properties
+
+    static PropertiesHolder withFallbackFromExample(File propertiesFile, String exampleName = propertiesFile.name + '.example') {
+        return fromFile(
+                propertiesFile,
+                true,
+                propertiesFile.toPath().parent.resolve(exampleName)
+        )
+    }
+
+    static PropertiesHolder fromFile(File file, boolean createIfAbsent = false, java.nio.file.Path template = null) {
+        Properties properties = new Properties()
+
+        try {
+            file.withInputStream {
+                properties.load(it)
+            }
+            return new PropertiesHolder(file, properties)
+        } catch (FileNotFoundException e) {
+            if (createIfAbsent) {
+                String filename = file.name
+                if (template) {
+                    println("File '${filename}' not found -> it will be generated from '${template.toFile().name}' template")
+                    Files.copy(template, file.toPath())
+                    return fromFile(file, false, null)
+                } else {
+                    println("File '${filename}' not found -> it will be generated")
+                    return new PropertiesHolder(file, properties)
+                }
+            } else {
+                throw e
+            }
+        }
+    }
+
+    private PropertiesHolder(File file, Properties properties) {
+        this.file = file
+        this.filename = file.name
+        this.properties = properties
+    }
+
+    String get(String key) {
+        String value = properties.get(key)
+        if (!value) {
+            throw new IllegalArgumentException("'${filename}' file: '${key}' is not present")
+        }
+        return value.trim()
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
