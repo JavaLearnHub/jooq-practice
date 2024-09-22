@@ -151,4 +151,3 @@ public class EmployeesRepository implements SmartInitializingSingleton {
 //        System.out.println("Result: " + departments);
     }
 }
-
