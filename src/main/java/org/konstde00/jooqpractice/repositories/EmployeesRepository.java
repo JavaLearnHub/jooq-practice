@@ -149,7 +149,6 @@ public class EmployeesRepository implements SmartInitializingSingleton {
     public void afterSingletonsInstantiated() {
 //        List<String> departments = getDepartmentsWithCertainMinimumSalaryAndCertainAverageSalaryAndMoreThanEightEmployees();
 //        System.out.println("Result: " + departments);
-
     }
 }
 
