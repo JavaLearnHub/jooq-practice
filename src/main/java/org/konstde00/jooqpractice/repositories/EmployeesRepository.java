@@ -14,7 +14,7 @@ import static org.konstde00.jooqpractice.sql.schema.jooq.Tables.*;
 
 @Repository
 @AllArgsConstructor
-public class EmployeesRepository implements SmartInitializingSingleton {
+public class EmployeesRepository {
 
     private final DSLContext dslContext;
 
@@ -145,9 +145,9 @@ public class EmployeesRepository implements SmartInitializingSingleton {
                 .fetch(record -> record.get(DEPARTMENTS.DEPT_NAME));
     }
 
-    @Override
-    public void afterSingletonsInstantiated() {
+//    @Override
+//    public void afterSingletonsInstantiated() {
 //        List<String> departments = getDepartmentsWithCertainMinimumSalaryAndCertainAverageSalaryAndMoreThanEightEmployees();
 //        System.out.println("Result: " + departments);
-    }
+//    }
 }
