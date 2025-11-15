@@ -64,6 +64,16 @@ dependencies {
     implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
     implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
 
+    // Additional runtime dependencies for testing GitHub Actions dependency graph
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'com.google.guava:guava:33.0.0-jre'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1'
+
+    // Additional test dependencies for testing GitHub Actions dependency graph
+    testImplementation 'org.assertj:assertj-core:3.25.3'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'org.mockito:mockito-core:5.10.0'
+
 }
 
 class DbConfig {
