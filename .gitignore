@@ -36,4 +36,8 @@ out/
 ### VS Code ###
 .vscode/
 
+### Database config ###
 db.properties
+
+### AI Kit ###
+.ai-kit/

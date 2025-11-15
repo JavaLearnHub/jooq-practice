@@ -1,0 +1,10 @@
+# Database configuration template
+# Copy this file to db.properties and update with your actual values
+
+database.mysql.host=localhost
+database.mysql.port=3306
+database.mysql.user=root
+database.mysql.password=password
+database.mysql.schema=jooq_practice
+database.mysql.metadata.table=flyway_schema_history
+database.mysql.metadata.location=classpath:db/migration
